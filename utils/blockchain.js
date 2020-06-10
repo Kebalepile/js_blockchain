@@ -119,4 +119,4 @@ class Blockchain {
 // prevents further addition of any property to object
 Object.freeze(Blockchain)
 
-module.exorts = Blockchain
+module.exports = Blockchain

@@ -3,28 +3,32 @@ const { nanoid } = require('nanoid'),
 
 // blockchain data structure
 class Blockchain {
+ #genesisBlock
   constructor() {
-    this.genesisBlock = this.mineBlock(100, '0', '0')
-
-    this.lastBlock = this.genesisBlock
-
     this.chain = new Map()
-
-    this.transactionPool = new Set()
-
-    this.hashedChain = this.hashChain()
-
     this.nodeAddress = nanoid()
-
+    this.transactionPool = new Set()
+    this.genesisBlock = this.mineBlock(100, '0', '0')
+    // holds last block mined in the network
+    this.lastBlock = this.genesisBlock
+    this.hashedChain = this.hashChain()
   }
-
+  getGenesisBlock () {
+    return this.genesisBlock
+  }
   hashChain() {
-    return sha256(this.chain)
+    let data
+    for (var block of this.chain.entries()) data += block.toString()
+
+    return sha256(data)
   }
   // retrive data regarding x address
-  addressData() {}
-
-  transaction(sender, recipient, amount, message = null) {
+  addressData() { }
+  // creates a blockchain transaction from network request
+  transaction(sender,
+    recipient,
+    amount,
+    message = null) {
     // initiates a transaction to be broadcasted before being
     // addes to transaction pool nor mined block
     let tnx = {
@@ -41,38 +45,36 @@ class Blockchain {
     this.transactionPool.add(transaction)
     return `transaction ${transaction.id}, maybe mine in any block post block number ${this.chain.size}, if transaction is valid.`
   }
-  // retrive transaction by id if found
+  // retrive transaction by ID
   getTransaction(id) {
-    let transaction
+    let match
     for (var block of this.chain.values()) {
-      transaction = this.searchBlock(block, id)
-      if (transaction.found) {
-        transaction = transaction['tnx']
+      match = this.searchBlock(block, id)
+      if (match.found) {
+        match = match['transaction']
         break
       }
     }
     // test logic
-    return transaction
-      ? transaction
-      : `Sorry transaction with ID ${id} not found.`
+    return match ? match : `Sorry transaction with ID ${id} not found.`
   }
-
-  //search mined block for specific transaction
+  //search mined block for specific transaction with transaction ID.
   searchBlock(block, id) {
-    for (var tnx of block.values()) {
-      if (tnx.id === id) return { tnx, found: true }
+    for (var transaction of block.transaction) {
+      if (transaction['id'] === id)
+        return { transaction, found: true }
     }
   }
-  //  retrive block by block hash
-  getBlock(hash) {
+  //  retrive block by block id
+  getBlock(id) {
     let blockFound
     for (var key of this.chain.keys()) {
-      if (key === hash) {
-        blockFound = this.chain.get(hash)
+      if (key === id) {
+        blockFound = this.chain.get(id)
         break
       }
     }
-    return blockFound ? blockFound : `Block with hash ${hash}, not found.`
+    return blockFound ? blockFound : `Block with id ${id}, not found.`
   }
   // creates new block to be added to chain
   mineBlock(nonce, previousBlockHash, hash) {
@@ -87,17 +89,20 @@ class Blockchain {
       },
       transactions: this.transactionPool,
     }
-    this.chain.add(hash, block)
+    // access chain object like this so it does not throw a typeError
+    this.chain.set(block.header.id, block)
     this.transactionPool = new Set()
     this.lastBlock = block
     return {
       block,
-      msg: `block number ${this.size} mined.`,
+      msg: `block ${block.header.id} mined.`,
       hash,
     }
   }
   // hashs specific block contents
-  hashBlockData(previousBlockHash, blockdata, nonce) {
+  hashBlockData(previousBlockHash,
+    blockdata,
+    nonce) {
     let data = previousBlockHash + blockdata + nonce
     return sha256(data)
   }
@@ -114,6 +119,7 @@ class Blockchain {
 
     return nonce
   }
+  
 }
 
 // prevents further addition of any property to object

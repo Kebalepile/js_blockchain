@@ -10,7 +10,7 @@ class Blockchain {
     this.transactionPool = new Set()
     this.genesisBlock = this.mineBlock(100, '0', '0')
     // holds last block mined in the network
-    this.lastBlock = this.genesisBlock
+    this.lastBlock 
     this.hashedChain = this.hashChain()
   }
   getGenesisBlock () {
@@ -80,6 +80,7 @@ class Blockchain {
   mineBlock(nonce, previousBlockHash, hash) {
     let block = {
       header: {
+        index: this.chain.size + 1,
         id: nanoid(),
         nonce,
         hash,
@@ -94,27 +95,28 @@ class Blockchain {
     this.transactionPool = new Set()
     this.lastBlock = block
     return {
-      block,
       msg: `block ${block.header.id} mined.`,
       hash,
     }
   }
   // hashs specific block contents
-  hashBlockData(previousBlockHash,
+  hashBlock(previousBlockHash,
     blockdata,
     nonce) {
-    let data = previousBlockHash + blockdata + nonce
+      // must be a string!
+    let data = previousBlockHash + nonce + JSON.stringify(blockdata) 
     return sha256(data)
   }
   // Proof Of Work is the mining algorthm being utilized here.
   //  hash must start with '0000', before block can be mined.
   PoW(previousBlockHash, blockdata) {
     let nonce = 100,
-      hash = this.hashBlockData(previousBlockHash, blockdata, nonce)
+      hash = this.hashBlock(previousBlockHash, blockdata, nonce)
 
-    while (hash.substring[(0, 4)] !== '0000') {
+    while (hash.substring(0, 4) !== '0000') {
       nonce++
-      hash = this.hashBlockData(previousBlockHash, blockdata, nonce)
+      hash = this.hashBlock(previousBlockHash, blockdata, nonce)
+      // console.log(hash)
     }
 
     return nonce

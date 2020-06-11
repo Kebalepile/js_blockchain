@@ -50,8 +50,43 @@ describe('Bitecoin Blockchain Tests.', () => {
       xssert.equal(Bitecoin.transactionPool.size, 6)
     })
   })
-  xcontext('Mine block', () => {
-    it('Blockchain should mine a block', () => {})
+
+  context('Mine block with Proof of Work algorthm.', () => {
+    it('Blockchain should mine a block.', () => {
+       console.log("Node at address ",Bitecoin.nodeAddress, "  is mining... be paitent.")
+       
+       let makeBlockData = () => {
+          let transactions = new Set(),
+            i = 0
+          while (i !== 2) {
+              i++
+            transactions.add(
+              Bitecoin.transaction(
+                nanoid(),
+                nanoid(),
+                i * 20,
+                `payment number ${i} of ${i * 20} Bitecoin.`,
+              ),
+            )
+          }
+         //add transations to transactions pool.
+          transactions.forEach(transaction => Bitecoin.addToTransactionPool(transaction))
+          return transactions
+        },
+        previousBlockHash = Bitecoin.lastBlock.header.hash,
+        blockdata = {
+          index: Bitecoin.lastBlock.header.index + 1,
+          transactions: makeBlockData()
+        },
+        nonce = Bitecoin.PoW(previousBlockHash, blockdata),
+        hash = Bitecoin.hashBlock(previousBlockHash, blockdata, nonce),
+        // return object with block hash, msg
+        minedBlock = Bitecoin.mineBlock(nonce, previousBlockHash, hash)
+
+      console.dir(minedBlock)
+
+      minedBlock.should.be.an('object')
+    })
   })
   xcontext('Get transaction from mined block by transaction id', () => {
     it('should return transaction from blockchain', () => {})

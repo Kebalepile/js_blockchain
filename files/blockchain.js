@@ -3,17 +3,17 @@ const { nanoid } = require('nanoid'),
 
 // blockchain data structure
 class Blockchain {
- #genesisBlock
+  #genesisBlock
   constructor() {
     this.chain = new Map()
     this.nodeAddress = nanoid()
     this.transactionPool = new Set()
     this.genesisBlock = this.mineBlock(100, '0', '0')
     // holds last block mined in the network
-    this.lastBlock 
+    this.lastBlock
     this.hashedChain = this.hashChain()
   }
-  getGenesisBlock () {
+  getGenesisBlock() {
     return this.genesisBlock
   }
   hashChain() {
@@ -47,24 +47,19 @@ class Blockchain {
   }
   // retrive transaction by ID
   getTransaction(id) {
+
     let match
-    for (var block of this.chain.values()) {
-      match = this.searchBlock(block, id)
-      if (match.found) {
-        match = match['transaction']
+    for (let block of this.chain.values()) {
+      for (let transaction of block.transactions) {
+        if (transaction['id'] === id)
+          match = { transaction, found: true }
         break
       }
     }
     // test logic
-    return match ? match : `Sorry transaction with ID ${id} not found.`
+    return match ? match['transaction'] : `Sorry transaction with ID ${id} not found.`
   }
-  //search mined block for specific transaction with transaction ID.
-  searchBlock(block, id) {
-    for (var transaction of block.transaction) {
-      if (transaction['id'] === id)
-        return { transaction, found: true }
-    }
-  }
+
   //  retrive block by block id
   getBlock(id) {
     let blockFound
@@ -96,15 +91,15 @@ class Blockchain {
     this.lastBlock = block
     return {
       msg: `block ${block.header.id} mined.`,
-      hash,
+      blockId: block.header.id,
     }
   }
-  // hashs specific block contents
+  // hashs specific block contents, deemed important hash creation.
   hashBlock(previousBlockHash,
     blockdata,
     nonce) {
-      // must be a string!
-    let data = previousBlockHash + nonce + JSON.stringify(blockdata) 
+    // must be a string!
+    let data = previousBlockHash + JSON.stringify(blockdata) + nonce
     return sha256(data)
   }
   // Proof Of Work is the mining algorthm being utilized here.
@@ -121,7 +116,7 @@ class Blockchain {
 
     return nonce
   }
-  
+
 }
 
 // prevents further addition of any property to object

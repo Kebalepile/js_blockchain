@@ -16,7 +16,7 @@
   },
   "scripts": {
     "tests": "mocha test/blockchain/test1.js",
-    "api":"nodemon api.js"
+    "api":"nodemon network.js"
   },
   "repository": {
     "type": "git",

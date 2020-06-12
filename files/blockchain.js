@@ -4,9 +4,9 @@ const { nanoid } = require('nanoid'),
 // blockchain data structure
 class Blockchain {
   #genesisBlock
-  constructor() {
+  constructor(address) {
     this.chain = new Map()
-    this.nodeAddress = nanoid()
+    this.nodeAddress = address
     this.transactionPool = new Set()
     this.genesisBlock = this.mineBlock(100, '0', '0')
     // holds last block mined in the network
@@ -23,7 +23,7 @@ class Blockchain {
     return sha256(data)
   }
   // retrive data regarding x address
-  addressData() { }
+  addressData(address) { }
   // creates a blockchain transaction from network request
   transaction(sender,
     recipient,

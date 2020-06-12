@@ -15,7 +15,8 @@
     "mocha": "^8.0.1"
   },
   "scripts": {
-    "tests": "mocha test/blockchain/test1.js"
+    "tests": "mocha test/blockchain/test1.js",
+    "api":"nodemon api.js"
   },
   "repository": {
     "type": "git",

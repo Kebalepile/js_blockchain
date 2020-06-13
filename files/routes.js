@@ -13,15 +13,13 @@ router.get("/", (req, res) => res.json(details));
 
 // returns entire Node blockchain.
 router.get("/blockchain", (req, res) => {
-    let blockchain = {...Bitecoin}
-    blockchain.chain = Object.fromEntries(Bitecoin.chain)
-    blockchain.transactionPool = Array.from(Bitecoin.transactionPool)
 
-    console.log(blockchain)
-    
-    console.log("=========================")
-    console.log(Bitecoin)
-    res.send(blockchain)
+    res.send({
+        ...Bitecoin,
+        chain: Object.fromEntries(Bitecoin.chain),
+        transactionPool: Array.from(Bitecoin.transactionPool),
+        nodesInNetwork: Array.from(Bitecoin.nodesInNetwork)
+    })
 })
 
 // announce node to available nodes in the network.
@@ -108,14 +106,14 @@ router.post("/available_nodes", (req, res) => {
 })
 // creates transaction in the blockchain &
 //  broadcastes it to nodes available in the network.
-router.post("/transaction",async (req,res) => {
-    let { sender, recipient, amount, msg} = newNodeInNetworkURL
- try{
-     let transaction = await Node.transaction(sender,recipient,amount,msg)
+router.post("/transaction", async (req, res) => {
+    let { sender, recipient, amount, msg } = newNodeInNetworkURL
+    try {
+        let transaction = await Node.transaction(sender, recipient, amount, msg)
 
- }catch (err) {
+    } catch (err) {
 
- }
+    }
 })
 
 

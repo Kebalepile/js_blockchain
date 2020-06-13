@@ -32,7 +32,7 @@ module.exports.details =  {
             route: `http://localhost:${process.argv[2] || 3000}/api/mine`
         },
         consensus: {
-            description: `Nodes avaliable in the network determine which Blockchain is valid, then return valid Blockchain.`,
+            description: `Nodes available in the network determine which Blockchain is valid, then return valid Blockchain.`,
             methods: `GET`,
             route: `http://localhost:${process.argv[2] || 3000}/api/consensus`
         }

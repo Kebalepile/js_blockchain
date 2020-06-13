@@ -11,6 +11,6 @@ api.use(bodyParser.urlencoded({ extended: false }))
 api.use('/api', routes)
 // fallback for any path that returns a 404
 api.all(/(^\/.{0,})/, (req, res) => res.redirect(301, '/api'))
-
+// console.log(process.argv)
 api.listen(port, () => console.log(`listening on http://localhost:${port}`))
 

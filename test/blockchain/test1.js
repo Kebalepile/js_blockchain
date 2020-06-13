@@ -1,4 +1,5 @@
-let Blockchain = require("../../files/Blockchain"),
+// NB: Node extends the Blockchain.
+let Node = require("../../files/Node"),
   should = require("chai").should(),
   { assert } = require("chai"),
   {
@@ -6,7 +7,7 @@ let Blockchain = require("../../files/Blockchain"),
     addToTransactionPool,
     toArray
   } = require("../test_utils/xFunction"),
-  {nanoid} = nanoid;
+  {nanoid} =require('nanoid');
 
 // Run each context separately. else test(s) may clash & fail.
 describe("Bitecoin Blockchain Tests.", function () {
@@ -14,15 +15,15 @@ describe("Bitecoin Blockchain Tests.", function () {
 
   before(function () {
     // blockchian instance
-    Bitecoin = new Blockchain(nanoid());
+    Bitecoin = new Node(nanoid(),3000);
     
   });
 
   xcontext("Blockchain instance", function () {
     it("should return instance of Blockchain", function () {
       
-      // console.log(Bitecoin)
-      assert(Bitecoin instanceof Blockchain, true);
+      console.log(Bitecoin)
+      assert(Bitecoin instanceof Node, true);
     });
   });
   xcontext("Genesis Block", function () {

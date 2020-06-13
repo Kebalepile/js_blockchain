@@ -83,7 +83,7 @@ class Blockchain {
         minedBy: this.nodeAddress,
         timeStamp: Date.now(),
       },
-      transactions: this.transactionPool,
+      transactions: Array.from(this.transactionPool),
     }
     // access chain object like this so it does not throw a typeError
     this.chain.set(block.header.id, block)

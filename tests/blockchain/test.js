@@ -29,7 +29,7 @@ describe("Bitecoin Blockchain Tests.", function () {
   xcontext("Genesis Block", function () {
     it("should return mined Genesis Block", function () {
       const GenesisBlock = Bitecoin.genesisBlock;
-      // console.log(GenesisBlock)
+      console.log(GenesisBlock)
       GenesisBlock.should.be.an("object");
     });
   });

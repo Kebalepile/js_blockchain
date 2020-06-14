@@ -19,8 +19,8 @@ router.get("/node", (req, res) => {
     res.json({
         ...node,
         chain: Object.fromEntries(node.chain),
-        transactionPool: Array.from(node.transactionPool),
-        nodesInNetwork: Array.from(node.nodesInNetwork)
+        transactionPool: [...node.transactionPool],
+        nodesInNetwork: [...node.nodesInNetwork]
     })
 })
 
@@ -34,13 +34,13 @@ router.post("/broadcast_node", async (req, res) => {
 
     try {
         if (nodeURLNotnode && !nodeNotInNetwork) {
-          
+
             for (let nodeNetworkURL of node.nodesInNetwork) {
 
                 let opt = {
                     method: 'post',
                     url: `${nodeNetworkURL}/api/node_in_network`,
-                    data: {nodeURL}
+                    data: { nodeURL }
                 }
 
                 alertNodesInNetwork.push(axios(opt))
@@ -55,7 +55,12 @@ router.post("/broadcast_node", async (req, res) => {
         const response = await axios({
             method: 'post',
             url: `${nodeURL}/api/available_nodes`,
-            data: availableNodes
+            data: {
+                chain: Object.fromEntries(node.chain),
+                hashedChain: node.hashedChain,
+                availableNodes,
+                transactionPool: [...node.transactionPool]
+            }
         })
 
         res.json({ message: response.data })
@@ -65,35 +70,82 @@ router.post("/broadcast_node", async (req, res) => {
     }
 
 })
-// registers new network node in network with the available nodes in the network.
+// registers new node in network with
+//  the available nodes in the network.
 router.post("/node_in_network", (req, res) => {
 
     const nodeInNetwork = req.body
 
-    if (node.nodeURL !== nodeInNetwork['nodeURL']) node.nodesInNetwork.add(nodeInNetwork['nodeURL'])
-    
+    if (node.nodeURL !== nodeInNetwork['nodeURL']) {
+        node.nodesInNetwork.add(nodeInNetwork['nodeURL'])
+    }
+
     res.end()
 })
 
-// registers available network nodes in the network with the new node in the network.
+// updates new nodes transaction pool.
+// updates new nodes hasedChain.
+// adds available nodes in the network
+//  to the new nodes's 'nodesInNetwork' in the network.
 router.post("/available_nodes", (req, res) => {
 
-    const availableNodesInNetwork = req.body
-    for (let nodeURL of availableNodesInNetwork) {
-        if (nodeURL !== node.nodeURL) node.nodesInNetwork.add(nodeURL)
+    const { availableNodes,
+        hashedChain,
+        transactionPool } = req.body
+
+    node.hashedChain = hashedChain
+
+    for (let transaction of transactionPool) {
+        if (!node.transactionPool.has(transaction)) {
+            node.addToTransactionPool(transaction)
+        }
+    }
+    for (let nodeURL of availableNodes) {
+        if (nodeURL !== node.nodeURL) {
+            node.nodesInNetwork.add(nodeURL)
+        }
     }
     res.send(`node at ${node.nodeURL} can now participate.`)
 })
 // creates transaction in the blockchain &
 //  broadcastes it to nodes available in the network.
 router.post("/transaction", async (req, res) => {
-    const { sender, recipient, amount, msg } = newNodeInNetworkURL
+    const { sender, recipient, amount, msg } = req.body
+
     try {
-        const transaction = await Node.transaction(sender, recipient, amount, msg)
-        
+        // create a transaction in the blockchain.
+        const transaction = node.transaction(sender, recipient, amount, msg)
+
+        // add transaction to transaction pool, 
+        // of node which initialzed transaction.
+        const message = node.addToTransactionPool(transaction)
+
+        const updateTransactionPool = []
+
+        node.nodesInNetwork.forEach(nodeURL => {
+            let opt = {
+                method: "post",
+                url: `${nodeURL}/api/transaction_pool`,
+                data: { transaction }
+            }
+            updateTransactionPool.push(axios(opt))
+        })
+
+        await Promise.all(updateTransactionPool)
+
+        res.json({ message, transaction })
     } catch (err) {
 
     }
+})
+// adds a bordcasted trasaction to transaction pool 
+// of each node available in the network.
+router.post("/transaction_pool", (req, res) => {
+    const { transaction } = req.body
+
+    if (!node.transactionPool.has(transaction)) node.addToTransactionPool(transaction)
+
+    res.end()
 })
 
 

@@ -1,17 +1,29 @@
 const { nanoid } = require('nanoid'),
   sha256 = require('sha256')
 
+const chain = new Map([['0000', {
+  header: {
+    index: 0,
+    id: "0000",
+    nonce: 0,
+    hash: '0',
+    previousBlockHash: '0',
+    minedBy: '0',
+    timeStamp: 1592144437358
+  },
+  transactions: []
+}]])
 // blockchain data structure
 class Blockchain {
   #genesisBlock
   constructor(address) {
-    this.chain = new Map()
-    this.nodeAddress = address
+    this.hashedChain = this.hashChain()
+    this.chain = chain
     this.transactionPool = new Set()
-    this.genesisBlock = this.mineBlock(100, '0', '0')
+    this.nodeAddress = address
+    this.genesisBlock = this.chain.get('0000')
     // holds last block mined in the network
     this.lastBlock
-    this.hashedChain = this.hashChain()
   }
   getGenesisBlock() {
     return this.genesisBlock

@@ -6,10 +6,10 @@ module.exports.details =  {
             methods: `GET`,
             route: `http://localhost:${process.argv[2] || 3000}/api`
         },
-        blockchain: {
-            description: `Returns Blockchain.`,
+        blockchain_node: {
+            description: `Returns a Node in network and its entire Blockchain.`,
             methods: `GET`,
-            route: `http://localhost:${process.argv[2] || 3000}/api/blockchain`
+            route: `http://localhost:${process.argv[2] || 3000}/api/node`
         },
         transaction: {
             description: `Makes a transaction in the blockchain.`,

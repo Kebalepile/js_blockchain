@@ -24,7 +24,7 @@ class Blockchain {
   }
   // retrive data regarding x address
   addressData(address) { }
-  // creates a blockchain transaction from network request
+  // creates a transaction in the blockchain .
   transaction(sender,
     recipient,
     amount,

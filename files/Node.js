@@ -6,6 +6,10 @@ class Node extends Blockchain {
         this.nodeURL = `http://localhost:${port}`
         this.nodesInNetwork = new Set()
     }
+
+    addNode(nodeURL) {
+        this.nodesInNetwork.add(nodeURL)
+    }
 }
 
 Object.freeze(Node)

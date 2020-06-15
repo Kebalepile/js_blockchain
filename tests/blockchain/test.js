@@ -120,11 +120,11 @@ describe("Bitecoin Blockchain Tests.", function () {
 
       const hash = Bitecoin.hashBlock(previousBlockHash, blockdata, nonce);
       // returns a obj with msg & blockId of mined block
-      const { blockId } = Bitecoin.mineBlock(nonce, previousBlockHash, hash);
+      const block = Bitecoin.mineBlock(nonce, previousBlockHash, hash);
 
-      const block = Bitecoin.getBlock(blockId)
-      console.log(block)
-      assert.strictEqual(blockId, block.header.id)
+      const resBlock = Bitecoin.getBlock(blockId)
+      console.log(resBlock)
+      assert.strictEqual(block.header['id'], resBlock.header.id)
     });
   });
 

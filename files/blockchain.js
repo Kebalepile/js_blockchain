@@ -1,38 +1,51 @@
 const { nanoid } = require('nanoid'),
+{genSalt, hash} = require('bcrypt'),
   sha256 = require('sha256')
 
-const chain = new Map([['0000', {
-  header: {
-    index: 0,
-    id: "0000",
-    nonce: 0,
-    hash: '0',
-    previousBlockHash: '0',
-    minedBy: '0',
-    timeStamp: 1592144437358
-  },
-  transactions: []
-}]])
+
 // blockchain data structure
 class Blockchain {
   #genesisBlock
   constructor(address) {
-    this.hashedChain = this.hashChain()
-    this.chain = chain
-    this.transactionPool = new Set()
     this.nodeAddress = address
+
+    this.chain = new Map([['0000', {
+      header: {
+        index: 1,
+        id: "0000",
+        nonce: 0,
+        hash: '0',
+        previousBlockHash: '0',
+        minedBy: '0',
+        timeStamp: 1592144437358
+      },
+      transactions: []
+    }]])
+    
+    this.transactionPool = new Set()
+   
     this.genesisBlock = this.chain.get('0000')
     // holds last block mined in the network
-    this.lastBlock
+    this.lastBlock = this.genesisBlock
   }
   getGenesisBlock() {
     return this.genesisBlock
   }
-  hashChain() {
-    let data
-    for (var block of this.chain.entries()) data += block.toString()
+  async hashChain() {
 
-    return sha256(data)
+  try{
+    let data,
+    rounds = 10,
+    salt  = await genSalt(rounds)
+
+    for await (var block of this.chain.entries()) data += block.toString()
+
+    let hashedData = await hash(data,salt)
+   
+    return hashedData
+  }catch (err) {
+
+  }
   }
   // retrive data regarding x address
   addressData(address) { }
@@ -101,10 +114,7 @@ class Blockchain {
     this.chain.set(block.header.id, block)
     this.transactionPool = new Set()
     this.lastBlock = block
-    return {
-      msg: `block ${block.header.id} mined.`,
-      blockId: block.header.id,
-    }
+    return block
   }
   // hashs specific block contents, deemed important hash creation.
   hashBlock(previousBlockHash,

@@ -10,15 +10,15 @@ const router = require("express").Router(),
     axios = require("axios"),
     { details } = require("../files/apiDetails");
 
+router.get("/blockchain_explorer", (req, res) => {
+    res.send("blockchain explorer.")
+})
 // returns api details.
 router.get("/", (req, res) => res.json(details));
 
 // returns entire Node with its copy of the blockchain.
 router.get("/node", (req, res) => {
-    // node.hashChain()
-    // .then(hash => {
-    //     console.log(hash)
-    // })
+
     res.json({
         ...node,
         chain: Object.fromEntries(node.chain),
@@ -231,8 +231,84 @@ router.post("/block_proposition", (req, res) => {
 })
 
 // nodes in network validate which chain is the correct one.
-router.get("/consensus", (req, res) => {
+router.get("/consensus", async (req, res) => {
+    const getNodes = []
 
+    let longestChainAccepted = 0
+    let longestChainRejected = 0
+    let longestChain = null
+    let longestChainLength = node.chain.size
+    let transactionPool = null
+
+    // find longest chain.
+    const xNodesBlockchain = xNode => {
+        if (xNode.chain.size > longestChainLength) {
+            longestChain = xNode
+            longestChainLength = xNode.chain.size
+            transactionPool = xNode.transactionPool
+        }
+    }
+
+    // determine if longest chain is correct chain.
+    const isCorrectChain = longestChain => {
+        return function (node) {
+            // node = Object.fromEntries(node)
+            switch (Object.is(node.hashChain(), longestChain.hashChain())) {
+                case true:
+                    longestChainAccepted++
+                    break
+                case false:
+                    longestChainRejected++
+                    break
+            }
+        }
+    }
+
+    const loopNodes = (arr, fn) => {
+        for (var node of arr) fn(node)
+    }
+
+    try {
+        for (var nodeURL in node.nodeInNetwork) {
+            let opt = {
+                method: 'get',
+                url: `${nodeURL}/api/node`
+            }
+            getNode.push(axios(opt))
+        }
+
+        let Nodes = await Promise.all(getNodes)
+
+        Nodes = await Nodes.reduce((accumulator, current) => {
+
+            accumulator.push(current.data)
+
+            return accumulator
+        }, [])
+
+        if (Nodes.length > 0) loopNodes(Nodes, xNodesBlockchain)
+
+        if (longestChain) {
+            let consensus = isCorrectChain(longestChain)
+            loopNodes(Nodes, consensus)
+        }
+        const DontReplaceNodeBlockchain = !longestChain || longestChainAccepted < longestChainRejected
+        const ReplaceNodeBlockchain = longestChain && longestChainAccepted > longestChainRejected
+
+        if (DontReplaceNodeBlockchain) {
+            res.json({
+                msg: "node's blockchain not replaced."
+            })
+        } else if (ReplaceNodeBlockchain) {
+            node.chain = longestChain.chain
+            node.transactionPool = longestChain.transactionPool
+            res.json({
+                msg: "node's blockchain replaced."
+            })
+        }
+
+    }
+    catch (err) { }
 })
 
 module.exports = router;

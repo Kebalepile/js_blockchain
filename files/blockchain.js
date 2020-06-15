@@ -31,18 +31,14 @@ class Blockchain {
   getGenesisBlock() {
     return this.genesisBlock
   }
-  async hashChain() {
+  hashChain() {
 
   try{
-    let data,
-    rounds = 10,
-    salt  = await genSalt(rounds)
+    let data
 
-    for await (var block of this.chain.entries()) data += block.toString()
+    for  (var block of this.chain.entries()) data += block.toString()
 
-    let hashedData = await hash(data,salt)
-   
-    return hashedData
+    return sha256(data)
   }catch (err) {
 
   }

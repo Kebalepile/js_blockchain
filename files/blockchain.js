@@ -1,9 +1,8 @@
 const { nanoid } = require('nanoid'),
-{genSalt, hash} = require('bcrypt'),
   sha256 = require('sha256')
 
 
-// blockchain data structure
+// blockchain data structure.
 class Blockchain {
   #genesisBlock
   constructor(address) {
@@ -21,37 +20,67 @@ class Blockchain {
       },
       transactions: []
     }]])
-    
+    this.hashedchain = this.hashChain()
     this.transactionPool = new Set()
-   
+
     this.genesisBlock = this.chain.get('0000')
-    // holds last block mined in the network
+    // holds last block mined in the network.
     this.lastBlock = this.genesisBlock
+
   }
   getGenesisBlock() {
     return this.genesisBlock
   }
+  // returns a hash version of the blockchain.
   hashChain() {
 
-  try{
-    let data
+    try {
+      let data
 
-    for  (var block of this.chain.entries()) data += block.toString()
+      for (var block of this.chain.entries()) data += block.toString()
 
-    return sha256(data)
-  }catch (err) {
+      return sha256(data)
+    } catch (err) {
 
+    }
   }
+  // NB Method not yet tested.
+  // retrive data associated with given address.
+  addressData(address) {
+    let somethingFound = false,
+      data = {
+        coinsSpent: [],
+        coinsRecieved: []
+      }
+
+    for (var block of this.chain.values()) {
+      for (var transaction of block.transactions) {
+        if (transaction.sender === address) {
+          data['coinsSpent'].push(transaction)
+          somethingFound = true
+        } else if (transaction.recipient === address) {
+          data['coinsRecieved'].push(transaction)
+          somethingFound = true
+        }
+      }
+    }
+
+    switch (somethingFound) {
+      case true:
+        return data
+      default:
+        return {
+          message: `${address} has no associated transactions to it.`
+        }
+    }
   }
-  // retrive data regarding x address
-  addressData(address) { }
-  // creates a transaction in the blockchain .
+  // creates a transaction in the blockchain.
   transaction(sender,
     recipient,
     amount,
     message = null) {
     // initiates a transaction to be broadcasted before being
-    // addes to transaction pool nor mined block
+    // addes to transaction pool nor mined block.
     let tnx = {
       id: nanoid(),
       sender,
@@ -66,7 +95,7 @@ class Blockchain {
     this.transactionPool.add(transaction)
     return `transaction ${transaction.id}, maybe mine in any block post block number ${this.chain.size}, if transaction is valid.`
   }
-  // retrive transaction by ID
+  // retrive transaction by ID.
   getTransaction(id) {
 
     let match
@@ -77,11 +106,11 @@ class Blockchain {
         break
       }
     }
-    // test logic
+    // test logic.
     return match ? match['transaction'] : `Sorry transaction with ID ${id} not found.`
   }
 
-  //  retrive block by block id
+  //  retrive block by block id.
   getBlock(id) {
     let blockFound
     for (var key of this.chain.keys()) {
@@ -92,7 +121,7 @@ class Blockchain {
     }
     return blockFound ? blockFound : `Block with id ${id}, not found.`
   }
-  // creates new block to be added to chain
+  // creates new block to be added to chain.
   mineBlock(nonce, previousBlockHash, hash) {
     let block = {
       header: {
@@ -106,7 +135,7 @@ class Blockchain {
       },
       transactions: Array.from(this.transactionPool),
     }
-    // access chain object like this so it does not throw a typeError
+    // access chain object like this so it does not throw a typeError.
     this.chain.set(block.header.id, block)
     this.transactionPool = new Set()
     this.lastBlock = block
@@ -120,7 +149,7 @@ class Blockchain {
     let data = previousBlockHash + JSON.stringify(blockdata) + nonce
     return sha256(data)
   }
-  // Proof Of Work is the mining algorthm being utilized here.
+  // Proof Of Work is the mining algorthm being utilized here,
   //  hash must start with '0000', before block can be mined.
   PoW(previousBlockHash, blockdata) {
     let nonce = 100,
@@ -137,7 +166,7 @@ class Blockchain {
 
 }
 
-// prevents further addition of any property to object
+// prevents further addition of any property to object.
 Object.freeze(Blockchain)
 
 module.exports = Blockchain

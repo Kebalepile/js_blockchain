@@ -19,12 +19,12 @@ module.exports.details =  {
         address: {
             description: `Returns data relating to specified address parameter.`,
             methods: `GET`,
-            route: `http://localhost:${process.argv[2] || 3000}/api/address?search=`
+            route: `http://localhost:${process.argv[2] || 3000}/api/address/q?=< Account Address >`
         },
         block: {
-            description: `Returns a block from the blockchain of specified id.`,
+            description: `Returns a block from the blockchain of specified id as query.`,
             methods: `GET`,
-            route: `http://localhost:${process.argv[2] || 3000}/api/block?id=`
+            route: `http://localhost:${process.argv[2] || 3000}/api/block/id?=< Block ID >`
         },
         mine: {
             description: `Mine initiates mining process (mine a new block to be added the blockchain)`,

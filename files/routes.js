@@ -10,6 +10,7 @@ const router = require("express").Router(),
     axios = require("axios"),
     { details } = require("../files/apiDetails");
 
+// returns GUI, to interact with the blockchain.
 router.get("/blockchain_explorer", (req, res) => {
     res.send("blockchain explorer.")
 })
@@ -23,7 +24,8 @@ router.get("/node", (req, res) => {
         ...node,
         chain: Object.fromEntries(node.chain),
         transactionPool: [...node.transactionPool],
-        nodesInNetwork: [...node.nodesInNetwork]
+        nodesInNetwork: [...node.nodesInNetwork],
+        hashedchain: node.hashChain()
     })
 })
 
@@ -33,7 +35,6 @@ router.post("/broadcast_node", async (req, res) => {
     const alertNodesInNetwork = []
     const nodeURLNotnode = nodeURL !== node.nodeURL
     const nodeNotInNetwork = node.nodesInNetwork.has(nodeURL)
-
 
     try {
         if (nodeURLNotnode && !nodeNotInNetwork) {
@@ -101,6 +102,13 @@ router.post("/available_nodes", (req, res) => {
     }
     res.send(`node at ${node.nodeURL} can now participate.`)
 })
+
+// NB router not yet tested.
+router.get("/address", (req, res) => {
+    const { q } = req.query
+    const data = node.addressData(q)
+    res.json(data)
+})
 // creates transaction in the blockchain &
 //  broadcastes it to nodes available in the network.
 router.post("/transaction", async (req, res) => {
@@ -132,7 +140,7 @@ router.post("/transaction", async (req, res) => {
 
     }
 })
-// adds a bordcasted trasaction to transaction pool 
+// adds a broadcasted trasaction to transaction pool 
 // of each node available in the network.
 router.post("/transaction_pool", (req, res) => {
     const { transaction } = req.body
@@ -141,7 +149,6 @@ router.post("/transaction_pool", (req, res) => {
 
     res.end()
 })
-
 
 // node mines a block then broadcasts it
 // to nodes available in the network.
@@ -166,7 +173,7 @@ router.get("/mine", async (req, res) => {
             let opt = {
                 method: 'post',
                 url: `${nodeURL}/api/block_proposition`,
-                data: { block }
+                data: { block, hashedchain: this.hashedchain }
             }
 
             blockProposition.push(axios(opt))
@@ -213,13 +220,14 @@ router.get("/mine", async (req, res) => {
 
 // verifies proposed block 
 router.post("/block_proposition", (req, res) => {
-    const { block } = req.body
+    const { block, hashedchain } = req.body
     const isPreviousBlockIndex = (block.header['index'] - 1) === node.lastBlock.header['index']
     const isPreviousBlockHash = block.header['previousBlockHash'] === node.lastBlock.header['hash']
 
     switch (isPreviousBlockIndex && isPreviousBlockHash) {
         case true:
             node.chain.set(block.header['id'], block)
+            node.hashedchain = hashedchain
             node.lastBlock = block
             node.transactionPool = new Set()
             res.json({ bool: true })
@@ -229,6 +237,13 @@ router.post("/block_proposition", (req, res) => {
             break
     }
 })
+// NB router not yet tested.
+// returns a block from the blockchain.
+router.get("/block", (req, res) => {
+    const { id } = req.query
+    const block = node.getBlock(id)
+    res.json({ block })
+})
 
 // nodes in network validate which chain is the correct one.
 router.get("/consensus", async (req, res) => {
@@ -237,23 +252,24 @@ router.get("/consensus", async (req, res) => {
     let longestChainAccepted = 0
     let longestChainRejected = 0
     let longestChain = null
-    let longestChainLength = node.chain.size
+    let longestChainLength = node.chain.size //returns map length
     let transactionPool = null
 
     // find longest chain.
     const xNodesBlockchain = xNode => {
-        if (xNode.chain.size > longestChainLength) {
+        if (Object.entries(xNode.chain).length > longestChainLength) {
             longestChain = xNode
-            longestChainLength = xNode.chain.size
+            console.log(Object.entries(xNode.chain).length)
+            longestChainLength = Object.entries(xNode.chain).length
             transactionPool = xNode.transactionPool
         }
     }
 
-    // determine if longest chain is correct chain.
+    // determine if longest chain is correct chain,
+    // by comparing its hashed blockchian with that of other nodes in the network.
     const isCorrectChain = longestChain => {
-        return function (node) {
-            // node = Object.fromEntries(node)
-            switch (Object.is(node.hashChain(), longestChain.hashChain())) {
+        return function (xNode) {
+            switch (xNode.hashedchain === longestChain.hashedchain) {
                 case true:
                     longestChainAccepted++
                     break
@@ -269,12 +285,13 @@ router.get("/consensus", async (req, res) => {
     }
 
     try {
-        for (var nodeURL in node.nodeInNetwork) {
+        for (let nodeURL of node.nodesInNetwork) {
             let opt = {
                 method: 'get',
                 url: `${nodeURL}/api/node`
             }
-            getNode.push(axios(opt))
+            getNodes.push(axios(opt))
+
         }
 
         let Nodes = await Promise.all(getNodes)
@@ -292,18 +309,30 @@ router.get("/consensus", async (req, res) => {
             let consensus = isCorrectChain(longestChain)
             loopNodes(Nodes, consensus)
         }
-        const DontReplaceNodeBlockchain = !longestChain || longestChainAccepted < longestChainRejected
+        // const DontReplaceNodeBlockchain = !longestChain || longestChainAccepted < longestChainRejected
         const ReplaceNodeBlockchain = longestChain && longestChainAccepted > longestChainRejected
 
-        if (DontReplaceNodeBlockchain) {
-            res.json({
-                msg: "node's blockchain not replaced."
+        if (ReplaceNodeBlockchain) {
+            // turn chain Object to Map.
+            node.chain = new Map(Object.entries(longestChain.chain))
+            // update nodes trasactionPool.
+            transactionPool.forEach(transaction => {
+                if (!node.transactionPool.has(transaction)) node.transactionPool.add(transaction)
             })
-        } else if (ReplaceNodeBlockchain) {
-            node.chain = longestChain.chain
-            node.transactionPool = longestChain.transactionPool
+            // update nodes "nodesInNetwork" Set.
+            longestChain.nodesInNetwork.forEach(nodeURL => {
+                if (nodeURL !== node.nodeURL && !node.nodesInNetwork.has(nodeURL)) {
+                    node.nodesInNetwork.add(nodeURL)
+                }
+            })
+            // update nodes last mined blockchain.
+            node.lastBlock = longestChain.lastBlock
             res.json({
                 msg: "node's blockchain replaced."
+            })
+        } else {
+            res.json({
+                msg: "node's blockchain not replaced."
             })
         }
 

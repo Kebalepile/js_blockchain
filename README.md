@@ -34,4 +34,5 @@ if you need a proper walk through, do not hesitate to contact me via [Telegram](
 ## options
 
 you run interact with this blockchain via the CLI (which is a bit advanced for some noob(s)) or use the [electron version](https://github.com/Kebalepile/scriptchain),
-which is very friendly, has a beautiful dark mode UI/UX node, just follow the 6 simple read me instructions as (scriptchain/readme.md)(https://github.com/Kebalepile/scriptchain/README.md).
+which is very friendly, has a beautiful dark mode UI/UX node,
+just follow the 6 simple read me instructions as [scriptchain/readme.md](https://github.com/Kebalepile/scriptchain).
